@@ -112,9 +112,6 @@ const ESQUEMA = {
   required: ["recomendacion", "propuestas"],
 };
 
-// TEMPORAL: causa técnica del error de cada generación, para depurar en la nube sin acceso a los logs.
-export const causas = new Map<number, string>();
-
 // Cada generación en curso se puede cancelar desde la app.
 const enCurso = new Map<number, AbortController>();
 
@@ -276,7 +273,6 @@ export async function ejecutarGeneracion(id: number, dispositivo: string, c: Con
   } catch (e) {
     if (señal.aborted) return; // la cancelación ya marcó el estado y devolvió el crédito
     console.error(`Generación ${id} falló:`, (e as Error).message);
-    causas.set(id, (e as Error).message.slice(0, 500));
     db.prepare("DELETE FROM propuestas WHERE generacion_id = ?").run(id);
     const mensaje = e instanceof ErrorCupo ? `${MENSAJE_CUPO} El crédito no se descontó` : "No pudimos terminar el diseño. El crédito no se descontó";
     actualizar(id, { estado: "error", error: mensaje, terminado: new Date().toISOString() });

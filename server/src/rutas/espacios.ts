@@ -10,13 +10,18 @@ export const espacios = Router();
 
 function leer(req: Request) {
   const b = req.body ?? {};
+  const foto = texto(b.fotoUrl, "la foto", 200, true);
+  // Solo fotos subidas a este servidor; otra ruta haría fallar el diseño más adelante.
+  if (foto && !/^\/fotos\/[\w-]+\.(jpg|jpeg|png|webp|heic)$/i.test(foto)) {
+    throw new ErrorApi(400, "foto_invalida", "La foto no es válida. Súbala de nuevo");
+  }
   return {
     nombre: texto(b.nombre, "el nombre del espacio", 40)!,
     ancho: numero(b.anchoCm, "El ancho", LIMITES.anchoCm)!,
     alto: numero(b.altoCm, "El alto", LIMITES.altoCm)!,
     fondo: numero(b.fondoCm, "El fondo", LIMITES.fondoCm, true),
     piso: numero(b.alturaPisoCm, "La altura desde el piso", [0, 250], true),
-    foto: texto(b.fotoUrl, "la foto", 200, true),
+    foto,
     analisis: b.analisis ? JSON.stringify(b.analisis) : null,
     marcas: leerMarcas(b.marcas),
     origen: b.medidasOrigen === "ia" ? "ia" : "persona",

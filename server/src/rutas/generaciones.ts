@@ -3,7 +3,7 @@ import { db, transaccion } from "../db.ts";
 import { LIMITES, SIN_PREFERENCIA, TIPO_AUTO, material, presupuesto, tipo } from "../catalogos.ts";
 import { ErrorApi, noEncontrado } from "../errores.ts";
 import { cobrarGeneracion, reembolsar, saldo } from "../lib/creditos.ts";
-import { cancelar, causas, ejecutarGeneracion, type Contexto } from "../lib/generacion.ts";
+import { cancelar, ejecutarGeneracion, type Contexto } from "../lib/generacion.ts";
 import { obtenerTrm, type Trm } from "../lib/trm.ts";
 import { verEnEspacio } from "../lib/enEspacio.ts";
 import { iso, propuesta, type FilaPropuesta } from "../lib/vistas.ts";
@@ -27,7 +27,6 @@ function vista(g: FilaGeneracion, trm: Trm | null) {
     etapa: g.etapa,
     imagenesListas: g.imagenes_listas,
     error: g.error,
-    causa: causas.get(g.id) ?? null,
     recomendacion: g.estado === "listo" ? g.recomendacion : null,
     contexto,
     creado: iso(g.creado),
