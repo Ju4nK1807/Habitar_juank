@@ -43,8 +43,9 @@ function Dibujo({ propuesta: p, muro }: { propuesta: Propuesta; muro: { w: numbe
   const centro = PAD.izq + (Math.max(muro.w, mueble.w) * escala) / 2;
   const mx = centro - (muro.w * escala) / 2;
   const fx = centro - (mueble.w * escala) / 2;
-  const tinta = p.ajuste === "cabe" ? c.accentInk : p.ajuste === "ajustado" ? c.warning600 : c.danger600;
-  const relleno = p.ajuste === "cabe" ? c.accent100 : p.ajuste === "ajustado" ? c.warning100 : c.danger100;
+  // Sin medir (medidas estimadas por la IA) no hay veredicto: color de marca, no de error.
+  const tinta = p.ajuste === "cabe" ? c.accentInk : p.ajuste === "ajustado" ? c.warning600 : p.ajuste === "sin_medidas" ? c.brandInk : c.danger600;
+  const relleno = p.ajuste === "cabe" ? c.accent100 : p.ajuste === "ajustado" ? c.warning100 : p.ajuste === "sin_medidas" ? c.brand100 : c.danger100;
   const t = (x: number, y: number, texto: string, color: string, anchor: "start" | "middle" | "end" = "middle", rot?: number) => (
     <SvgText x={x} y={y} fill={color} fontSize={12} fontFamily={fuentes.semibold} textAnchor={anchor} rotation={rot} origin={`${x},${y}`}>{texto}</SvgText>
   );

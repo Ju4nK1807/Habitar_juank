@@ -83,7 +83,7 @@ generaciones.post("/generaciones", (req, res) => {
     espacioId: esp?.id ?? null, espacioNombre: esp?.nombre ?? null,
     fotoUrl: esp?.foto_url ?? null, analisis: esp?.analisis ? JSON.parse(esp.analisis) : null,
     referencias,
-    ubicable: !!esp?.foto_url && !!esp.marcas,
+    ubicable: !!esp?.foto_url,
   };
 
   const genId = transaccion(() => {

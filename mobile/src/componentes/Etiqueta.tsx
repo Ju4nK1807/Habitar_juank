@@ -36,4 +36,4 @@ export const tipoAjuste = (a: Ajuste): Tipo => (a === "cabe" ? "exito" : a === "
 
 /** Etiqueta corta del ajuste para tarjetas: el texto completo va en el detalle. */
 export const textoAjusteCorto = (a: Ajuste) =>
-  a === "cabe" ? "Cabe" : a === "ajustado" ? "Al límite" : a === "no_cabe" ? "No cabe" : "Sin medidas";
+  a === "cabe" ? "Cabe" : a === "ajustado" ? "Al límite" : a === "no_cabe" ? "No cabe" : "Sin medir";

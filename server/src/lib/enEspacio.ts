@@ -5,6 +5,8 @@ import { db, DIR_FOTOS, DIR_IMAGENES } from "../db.ts";
 import { ErrorApi } from "../errores.ts";
 import { ponerEnFoto, type Marcas } from "./composicion.ts";
 import { ErrorRecorte } from "./croma.ts";
+import sharp from "sharp";
+import { editarFoto } from "../ia/imagenes.ts";
 import { existsSync } from "node:fs";
 import type { FilaEspacio } from "./vistas.ts";
 import type { Contexto } from "./generacion.ts";
@@ -53,6 +55,51 @@ export function ubicarPropuesta(p: FilaPropuesta, esp: FilaEspacio & { foto_url:
   })().finally(() => enCurso.delete(clave));
   enCurso.set(clave, trabajo);
   return trabajo;
+}
+
+const LADO_MAYOR_EDICION = 1024;
+
+/** Medida de salida que conserva la proporción de la foto, en múltiplos de 16 (lo pide el modelo). */
+function medidaEdicion(w: number, h: number) {
+  const k = LADO_MAYOR_EDICION / Math.max(w, h);
+  const m16 = (n: number) => Math.max(256, Math.round((n * k) / 16) * 16);
+  return { ancho: m16(w), alto: m16(h) };
+}
+
+type DatosEdicion = { tipoEn?: string; colorEn?: string; ubicacionEn?: string; anchoCm: number; altoCm: number; fondoCm: number };
+
+/**
+ * Dibuja la propuesta dentro de la foto real con IA: la foto va primero y la imagen de la
+ * propuesta como referencia, para que sea el mismo mueble. A diferencia del pegado a escala,
+ * respeta la perspectiva, las esquinas y la luz; el tamaño es aproximado (se le dan las medidas).
+ */
+export async function dibujarEnFoto(p: { id: number; datos: string; imagen_url: string | null }, fotoUrl: string, ctx: Contexto, señal?: AbortSignal) {
+  if (!p.imagen_url) throw new ErrorApi(409, "sin_imagen", "Esta propuesta no tiene imagen para ponerla en su foto");
+  const d = JSON.parse(p.datos) as DatosEdicion;
+  const foto = await sharp(await readFile(join(DIR_FOTOS, basename(fotoUrl)))).rotate().toBuffer();
+  const { width: W = 1024, height: H = 1024 } = await sharp(foto).metadata();
+  const { ancho, alto } = medidaEdicion(W, H);
+  const entrada = await sharp(foto).resize(ancho, alto, { fit: "fill" }).jpeg({ quality: 90 }).toBuffer();
+  const referencia = await readFile(join(DIR_IMAGENES, basename(p.imagen_url)));
+
+  const lugar = ctx.analisis?.tipoEspacio && ctx.analisis.tipoEspacio !== "otro" ? ctx.analisis.tipoEspacio : "room";
+  const pieza = d.tipoEn || "piece of furniture";
+  const prompt = [
+    `Edit the first image, a real photo of a ${lugar === "habitación" ? "bedroom" : lugar === "sala" ? "living room" : lugar === "cocina" ? "kitchen" : lugar === "comedor" ? "dining room" : lugar === "estudio" ? "study" : "room"}.`,
+    `Place the exact ${pieza} shown in the second image (same design, same ${d.colorEn ?? ""} color, same materials) ${d.ubicacionEn || "in the free space against the wall"}.`,
+    `Real size: ${d.anchoCm} cm wide, ${d.altoCm} cm high, ${d.fondoCm} cm deep. Keep it to scale with the room: a baseboard is about 8 cm high, a power outlet plate about 11 cm, a door about 200 cm.`,
+    "Photorealistic, as if it were really there: same camera perspective, aligned with the walls, the corners and the baseboard, standing on the floor, natural lighting from the room, soft contact shadows.",
+    "Keep everything else exactly as it is: walls, power outlets, switches, doors, windows and the other furniture. Same framing.",
+  ].join(" ");
+
+  const editada = await editarFoto(prompt, [entrada, referencia], ancho, alto, señal);
+  const jpg = await sharp(editada).jpeg({ quality: 88 }).toBuffer();
+  const archivo = randomUUID();
+  await writeFile(join(DIR_IMAGENES, `${archivo}.jpg`), jpg);
+  const url = `/imagenes/${archivo}.jpg`;
+  // La foto editada es completa y el mueble puede quedar en cualquier parte: sirve también de "recorte".
+  db.prepare("UPDATE propuestas SET en_espacio_url = ?, en_espacio_recorte_url = ?, en_espacio_pos = NULL WHERE id = ?").run(url, url, p.id);
+  return url;
 }
 
 /** El mueble recortado se guarda al generar, junto a su imagen: <nombre>-mueble.png. */

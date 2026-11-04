@@ -17,10 +17,13 @@ type Datos = {
 /** SQLite guarda "AAAA-MM-DD HH:MM:SS" en UTC; la app necesita ISO 8601. */
 export const iso = (s: string) => s.replace(" ", "T") + "Z";
 
-/** Si las medidas del espacio las estimó la IA, el ajuste también es una estimación y se dice. */
+/**
+ * Con medidas estimadas por la IA mirando la foto no se puede afirmar si cabe: la estimación puede
+ * fallar por mucho. Se trata como sin medir y se invita a medir antes de fabricar.
+ */
 function ajusteConOrigen(d: { anchoCm: number; altoCm: number; fondoCm: number }, c: Contexto) {
   const a = calcularAjuste(d, c);
-  return c.medidasOrigen === "ia" && a.ajuste !== "sin_medidas" ? { ...a, etiquetaAjuste: `${a.etiquetaAjuste} (estimado)` } : a;
+  return c.medidasOrigen === "ia" ? { ...a, ajuste: "sin_medidas" as const, diferenciaCm: 0, etiquetaAjuste: "Sin medir · mida el espacio antes de fabricar" } : a;
 }
 
 const cm = (n: number) => String(Math.round(n * 10) / 10).replace(".", ",");
