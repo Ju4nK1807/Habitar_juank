@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, transaccion } from "../db.ts";
-import { LIMITES, SIN_PREFERENCIA, material, presupuesto, tipo } from "../catalogos.ts";
+import { LIMITES, SIN_PREFERENCIA, TIPO_AUTO, material, presupuesto, tipo } from "../catalogos.ts";
 import { ErrorApi, noEncontrado } from "../errores.ts";
 import { cobrarGeneracion, reembolsar, saldo } from "../lib/creditos.ts";
 import { cancelar, ejecutarGeneracion, type Contexto } from "../lib/generacion.ts";
@@ -14,7 +14,7 @@ import { buscarEspacio } from "./espacios.ts";
 export const generaciones = Router();
 
 type FilaGeneracion = {
-  id: number; estado: string; etapa: string; imagenes_listas: number; error: string | null;
+  id: number; estado: string; etapa: string; imagenes_listas: number; error: string | null; recomendacion: string | null;
   contexto: string; creado: string; terminado: string | null;
 };
 
@@ -27,6 +27,7 @@ function vista(g: FilaGeneracion, trm: Trm | null) {
     etapa: g.etapa,
     imagenesListas: g.imagenes_listas,
     error: g.error,
+    recomendacion: g.estado === "listo" ? g.recomendacion : null,
     contexto,
     creado: iso(g.creado),
     terminado: g.terminado,
@@ -45,8 +46,9 @@ generaciones.post("/generaciones", (req, res) => {
   const disp = dispositivo(res);
   const b = req.body ?? {};
 
-  const t = tipo(String(b.tipo));
-  if (!t) throw new ErrorApi(400, "dato_invalido", "Elija qué tipo de mueble necesita");
+  // Sin tipo, la IA decide qué mueble recomendar a partir de la descripción y la foto.
+  const t = b.tipo === undefined || b.tipo === null || b.tipo === TIPO_AUTO.id ? TIPO_AUTO : tipo(String(b.tipo));
+  if (!t) throw new ErrorApi(400, "dato_invalido", "Ese tipo de mueble no existe. Elija otro");
   const descripcion = texto(b.descripcion, "la descripción", LIMITES.descripcionMax)!;
   // Las medidas son opcionales: si faltan se usan las del espacio (medidas o estimadas por la IA).
   let anchoMaxCm = numero(b.anchoMaxCm, "El ancho", LIMITES.anchoCm, true);
@@ -55,7 +57,8 @@ generaciones.post("/generaciones", (req, res) => {
   let fondoMaxCm = numero(b.fondoMaxCm, "El fondo", LIMITES.fondoCm, true);
   const mat = String(b.material ?? SIN_PREFERENCIA);
   if (mat !== SIN_PREFERENCIA && !material(mat)) throw new ErrorApi(400, "dato_invalido", "Elija un material de la lista");
-  if (!presupuesto(String(b.presupuesto))) throw new ErrorApi(400, "dato_invalido", "Elija una franja de presupuesto");
+  const franja = b.presupuesto ? String(b.presupuesto) : null;
+  if (franja && !presupuesto(franja)) throw new ErrorApi(400, "dato_invalido", "Elija una franja de presupuesto de la lista");
   const referencias = Array.isArray(b.referencias) ? b.referencias.slice(0, 2).filter((r: unknown) => typeof r === "string") : [];
 
   let esp = null;
@@ -76,7 +79,7 @@ generaciones.post("/generaciones", (req, res) => {
 
   const contexto: Contexto = {
     tipo: t.id, tipoNombre: t.nombre, descripcion, anchoMaxCm, altoMaxCm, fondoMaxCm, medidasOrigen,
-    material: mat, presupuesto: String(b.presupuesto),
+    material: mat, presupuesto: franja,
     espacioId: esp?.id ?? null, espacioNombre: esp?.nombre ?? null,
     fotoUrl: esp?.foto_url ?? null, analisis: esp?.analisis ? JSON.parse(esp.analisis) : null,
     referencias,

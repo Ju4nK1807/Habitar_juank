@@ -99,7 +99,7 @@ export default function DetalleProyecto() {
               mensaje="Abra una propuesta y toque Guardar para agregarla aquí."
               accion={{ texto: "Diseñar un mueble", onPress: () => router.push("/nuevo/espacio"), icono: Plus }}
             />
-          ) : null
+          ) : undefined
         }
         renderItem={({ item }) => <FilaPropuesta propuesta={item} onQuitar={() => quitar(item)} />}
       />

@@ -21,8 +21,8 @@ const LIMITE_SIN_CAMBIOS_MS = 90_000;
 // Los mensajes rotan cada 5 s, pero solo dentro de la etapa real en la que va el servidor.
 const MENSAJES = {
   propuestas: [
-    "Leyendo lo que necesita",
-    "Ajustando las medidas al rincón. Toma unos 20 segundos",
+    "Leyendo lo que quiere",
+    "Eligiendo colores que combinen con su espacio. Toma unos 30 segundos",
     "Armando el despiece de cada propuesta",
     "Calculando material y precio",
   ],
@@ -33,7 +33,7 @@ const MENSAJES = {
   ],
   ubicando: [
     "Poniendo cada propuesta en su foto",
-    "Ajustando el tamaño a sus medidas",
+    "Ajustando el tamaño al espacio",
     "Cuidando la luz de su espacio",
   ],
 };
@@ -156,7 +156,7 @@ export default function Diseñando() {
   return (
     <Pantalla bordes={["top", "bottom"]}>
       <View style={{ paddingHorizontal: margen.lateral, paddingTop: espacio.s16 }}>
-        <Pasos actual={4} />
+        <Pasos actual={3} />
       </View>
 
       <View style={{ flex: 1, justifyContent: "center", padding: margen.lateral, gap: espacio.s32 }}>
@@ -215,7 +215,7 @@ export default function Diseñando() {
       <BarraFija>
         {error ? (
           <>
-            <Boton titulo="Volver a las restricciones" onPress={() => (router.canGoBack() ? router.back() : router.dismissTo("/"))} ancho />
+            <Boton titulo="Volver a editar" onPress={() => (router.canGoBack() ? router.back() : router.dismissTo("/"))} ancho />
             <Boton titulo="Ir al inicio" variante="texto" onPress={() => router.dismissTo("/")} ancho />
           </>
         ) : (

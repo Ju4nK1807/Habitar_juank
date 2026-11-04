@@ -56,7 +56,7 @@ export default function Proyectos() {
         ListEmptyComponent={
           cargando ? (
             <View style={{ gap: espacio.s12 }}>{[0, 1, 2].map((i) => <Esqueleto key={i} alto={104} radio={radio.tarjeta} />)}</View>
-          ) : error ? null : (
+          ) : error ? undefined : (
             <EstadoVacio
               icono={FolderOpen}
               titulo="Sin proyectos todavía"

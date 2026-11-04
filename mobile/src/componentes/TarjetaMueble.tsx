@@ -6,7 +6,7 @@ import { espacio, radio } from "@/theme/tokens";
 import { urlArchivo } from "@/servicios/api";
 import type { Propuesta } from "@/servicios/tipos";
 import { usePreferencias } from "@/store/preferencias";
-import { medidasTexto, precioTexto } from "@/lib/formato";
+import { capitalizar, medidasTexto, precioTexto } from "@/lib/formato";
 import { Texto } from "./Texto";
 import { Icono } from "./Icono";
 import { Etiqueta, textoAjusteCorto, tipoAjuste } from "./Etiqueta";
@@ -62,7 +62,7 @@ export function TarjetaMueble({ propuesta: p, onPress, destacado }: Props) {
       <View style={{ padding: espacio.s12, gap: espacio.s4, flex: 1 }}>
         <Texto variante="titleSm" numberOfLines={2} style={{ minHeight: 48 }}>{p.nombre}</Texto>
         <Texto variante="bodySm" color="ink600" numberOfLines={1}>{medidasTexto(p.medidas, unidades)}</Texto>
-        <Texto variante="bodySm" color="ink600" numberOfLines={1}>{p.materialTexto}</Texto>
+        <Texto variante="bodySm" color="ink600" numberOfLines={1}>{p.color ? `${capitalizar(p.color)} · ${p.materialTexto}` : p.materialTexto}</Texto>
         <Texto variante="labelLg" style={{ marginTop: espacio.s4 }} numberOfLines={1}>{precioTexto(p.precio, moneda)}</Texto>
         <View style={{ flex: 1 }} />
         <View style={{ marginTop: espacio.s8 }}>

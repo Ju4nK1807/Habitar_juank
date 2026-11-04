@@ -9,6 +9,7 @@ export type FilaPropuesta = { id: number; generacion_id: number; orden: number; 
 
 type Datos = {
   nombre: string; concepto: string; material: string; acabado: string;
+  tipoMueble?: string; color?: string; porQue?: string;
   anchoCm: number; altoCm: number; fondoCm: number; puertas: number; cajones: number;
   despiece: Pieza[]; precioCop: number; areaM2: number; fabricacionDias: number;
 };
@@ -26,13 +27,17 @@ const cm = (n: number) => String(Math.round(n * 10) / 10).replace(".", ",");
 
 export function propuesta(f: FilaPropuesta, c: Contexto, trm: Trm | null) {
   const d = JSON.parse(f.datos) as Datos;
-  const franja = presupuesto(c.presupuesto);
+  const franja = c.presupuesto ? presupuesto(c.presupuesto) : undefined;
   return {
     id: f.id,
     generacionId: f.generacion_id,
     orden: f.orden,
     nombre: d.nombre,
     concepto: d.concepto,
+    // Las propuestas anteriores a la recomendación por colores no tienen estos datos.
+    tipoMueble: d.tipoMueble ?? null,
+    color: d.color ?? null,
+    porQue: d.porQue ?? null,
     medidas: { anchoCm: d.anchoCm, altoCm: d.altoCm, fondoCm: d.fondoCm },
     medidasTexto: `${cm(d.anchoCm)} × ${cm(d.altoCm)} × ${cm(d.fondoCm)} cm`,
     material: d.material,

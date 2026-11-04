@@ -1,148 +1,160 @@
-import { useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
+import { useEffect, useState } from "react";
+import { ScrollView, View } from "react-native";
 import { router } from "expo-router";
 import { Image } from "expo-image";
-import * as ImagePicker from "expo-image-picker";
-import { ImagePlus, X } from "lucide-react-native";
-import { api, ErrorApi } from "@/servicios/api";
-import { useCatalogos } from "@/hooks/useCatalogos";
+import { Sparkles } from "lucide-react-native";
+import { api, ErrorApi, urlArchivo } from "@/servicios/api";
+import { useConsulta } from "@/hooks/useConsulta";
 import { useTema } from "@/theme/tema";
 import { espacio, margen, radio } from "@/theme/tokens";
 import { useBorrador } from "@/store/borrador";
 import { cerrarFlujo } from "@/lib/flujo";
+import { espacioDeLaFoto, retomarFoto } from "@/lib/fotoEspacio";
+import { plural } from "@/lib/formato";
+import type { Analisis } from "@/servicios/tipos";
 import { Pantalla, BarraFija } from "@/componentes/Pantalla";
 import { BarraSuperior } from "@/componentes/BarraSuperior";
 import { Texto } from "@/componentes/Texto";
-import { Icono } from "@/componentes/Icono";
 import { Boton } from "@/componentes/Boton";
 import { Chip, GrupoChips } from "@/componentes/Chip";
 import { CampoTexto } from "@/componentes/CampoTexto";
 import { Aviso } from "@/componentes/Aviso";
 import { Esqueleto } from "@/componentes/Esqueleto";
-import { toast } from "@/componentes/Toast";
 
 const MAX = 280;
-const MIN = 12;
+const MIN = 8;
+const EJEMPLOS = [
+  "Un sofá con cojines y una alfombra",
+  "Un mueble para el TV con repisas",
+  "Un escritorio pequeño para estudiar",
+  "Una mesita de noche con cajón",
+];
 
 export default function PasoNecesidad() {
   const b = useBorrador();
-  const catalogos = useCatalogos();
-  const largo = b.descripcion.trim().length;
+  const creditos = useConsulta(api.creditos);
+  const [generando, setGenerando] = useState(false);
+  const [errorEnvio, setErrorEnvio] = useState<ErrorApi | null>(null);
 
-  const motivo = !b.tipo ? "Elija el tipo de mueble para continuar" : largo < MIN ? "Describa un poco más lo que necesita" : undefined;
+  // Si la app se cerró mientras se analizaba la foto, se retoma al volver.
+  useEffect(() => retomarFoto(), []);
+
+  const largo = b.descripcion.trim().length;
+  const saldo = creditos.datos?.saldo;
+  const motivo = largo < MIN ? "Cuéntenos qué mueble le gustaría" : saldo === 0 ? "No le quedan créditos. Mañana recibe nuevos" : undefined;
+
+  const generar = async () => {
+    if (motivo) return;
+    setGenerando(true);
+    setErrorEnvio(null);
+    try {
+      const esp = b.espacio ?? (b.foto ? await espacioDeLaFoto() : null);
+      const r = await api.generar({ descripcion: b.descripcion.trim(), espacioId: esp?.id ?? null });
+      b.cambiar({ generacionEnCurso: r.id });
+      router.push("/nuevo/disenando");
+    } catch (e) {
+      setErrorEnvio(e instanceof ErrorApi ? e : new ErrorApi("No pudimos empezar el diseño", "desconocido", 0));
+    } finally {
+      setGenerando(false);
+    }
+  };
 
   return (
     <Pantalla bordes={["top", "bottom"]} teclado>
       <BarraSuperior variante="flujo" paso={2} onCerrar={cerrarFlujo} />
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: margen.lateral, gap: margen.secciones }}>
         <View style={{ gap: espacio.s8 }}>
-          <Texto variante="titleLg" accessibilityRole="header">¿Qué necesita?</Texto>
-          <Texto variante="bodyMd" color="ink600">Cuéntelo con sus palabras. Entre más contexto, mejores propuestas.</Texto>
+          <Texto variante="titleLg" accessibilityRole="header">¿Qué le gustaría?</Texto>
+          <Texto variante="bodyMd" color="ink600">Descríbalo con sus palabras. Nosotros elegimos el tipo, el color y el material.</Texto>
         </View>
+
+        <SuEspacio />
 
         <View style={{ gap: espacio.s12 }}>
-          <Texto variante="labelLg">Tipo de mueble</Texto>
-          {catalogos.error ? (
-            <Aviso tipo={catalogos.error.sinConexion ? "sinConexion" : "error"} mensaje={catalogos.error.message} accion={{ texto: "Reintentar", onPress: catalogos.recargar }} />
-          ) : catalogos.datos ? (
-            <GrupoChips>
-              {catalogos.datos.tipos.map((t) => (
-                <Chip key={t.id} texto={t.nombre} activo={b.tipo === t.id} onPress={() => b.cambiar({ tipo: t.id })} />
-              ))}
-            </GrupoChips>
-          ) : (
-            <GrupoChips>{[90, 120, 100, 80, 110].map((w, i) => <Esqueleto key={i} ancho={w} alto={36} radio={radio.completo} />)}</GrupoChips>
-          )}
+          <CampoTexto
+            etiqueta="Lo que quiere"
+            value={b.descripcion}
+            onChangeText={(descripcion) => b.cambiar({ descripcion })}
+            placeholder="Ej: Un sofá con cojines y una alfombra"
+            lineas={4}
+            max={MAX}
+          />
+          <GrupoChips>
+            {EJEMPLOS.map((e) => <Chip key={e} texto={e} activo={b.descripcion === e} onPress={() => b.cambiar({ descripcion: e })} />)}
+          </GrupoChips>
         </View>
 
-        <CampoTexto
-          etiqueta="Descripción"
-          value={b.descripcion}
-          onChangeText={(descripcion) => b.cambiar({ descripcion })}
-          placeholder="Ej: Un mueble para el TV de 55 pulgadas con espacio para libros y la consola, que no se vea recargado"
-          lineas={5}
-          max={MAX}
-          ayuda="Qué guardará, quién lo usará y el estilo que le gusta."
-        />
-
-        <Referencias />
+        {errorEnvio ? (
+          <Aviso
+            tipo={errorEnvio.sinConexion ? "sinConexion" : "error"}
+            mensaje={errorEnvio.codigo === "sin_creditos" ? errorEnvio.message : `${errorEnvio.message}. El crédito no se descontó`}
+          />
+        ) : null}
       </ScrollView>
 
       <BarraFija>
-        <Boton titulo="Continuar" onPress={() => router.push("/nuevo/restricciones")} deshabilitado={!!motivo} motivo={motivo} ancho />
+        <Boton
+          titulo="Ver 4 propuestas · 1 crédito"
+          icono={Sparkles}
+          onPress={generar}
+          cargando={generando}
+          deshabilitado={!!motivo}
+          motivo={motivo}
+          ancho
+        />
+        {saldo !== undefined && !motivo ? (
+          <Texto variante="bodySm" color="ink600" centrado>Tiene {plural(saldo, "crédito", "créditos")}</Texto>
+        ) : null}
       </BarraFija>
     </Pantalla>
   );
 }
 
-/** Dos huecos opcionales para fotos de referencia de estilo. Se suben al elegirlas. */
-function Referencias() {
+/** Lo que la IA vio en la foto: tipo de espacio, estilo y colores. Así la persona sabe en qué se basa. */
+function SuEspacio() {
   const { c } = useTema();
-  const { referencias, cambiar } = useBorrador();
-  const [subiendo, setSubiendo] = useState<number | null>(null);
+  const { espacio: guardado, foto } = useBorrador();
+  const imagen = foto?.uri ?? urlArchivo(guardado?.fotoUrl);
+  if (!imagen) return null;
 
-  const elegir = async (i: number) => {
-    const r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.7, allowsEditing: true });
-    if (r.canceled) return;
-    const uri = r.assets[0].uri;
-    setSubiendo(i);
-    try {
-      const { fotoUrl } = await api.subirFoto(uri);
-      const nuevas = [...useBorrador.getState().referencias];
-      nuevas[i] = { uri, fotoUrl };
-      cambiar({ referencias: nuevas.filter(Boolean) });
-    } catch (e) {
-      toast.error(e instanceof ErrorApi ? e.message : "No pudimos subir la imagen. Intente de nuevo");
-    } finally {
-      setSubiendo(null);
-    }
-  };
+  const analisis: Analisis | null = foto ? foto.analisis : guardado?.analisis ?? null;
+  const mirando = foto && (foto.estado === "subiendo" || foto.estado === "analizando");
+  const lugar = analisis?.tipoEspacio && analisis.tipoEspacio !== "otro" ? analisis.tipoEspacio : "espacio";
 
   return (
     <View style={{ gap: espacio.s12 }}>
-      <View style={{ gap: espacio.s4 }}>
-        <Texto variante="labelLg">Referencias <Texto variante="bodySm" color="ink600">(opcional)</Texto></Texto>
-        <Texto variante="bodySm" color="ink600">Fotos de muebles o ambientes que le gusten. La IA toma el estilo, no los copia.</Texto>
+      <View style={{ flexDirection: "row", gap: espacio.s12, padding: espacio.s12, borderRadius: radio.tarjeta, borderWidth: 1, borderColor: c.border200, backgroundColor: c.surface100 }}>
+        <Image source={{ uri: imagen }} style={{ width: 72, height: 72, borderRadius: radio.campo, backgroundColor: c.surface200 }} contentFit="cover" accessibilityIgnoresInvertColors />
+        <View style={{ flex: 1, gap: espacio.s8, justifyContent: "center" }}>
+          {mirando ? (
+            <>
+              <Texto variante="labelMd" color="ink600">Mirando los colores de su espacio…</Texto>
+              <Esqueleto alto={14} ancho="80%" />
+              <View style={{ flexDirection: "row", gap: espacio.s4 }}>{[0, 1, 2, 3].map((i) => <Esqueleto key={i} ancho={20} alto={20} radio={radio.completo} />)}</View>
+            </>
+          ) : analisis ? (
+            <>
+              <Texto variante="titleSm">Su {lugar}: estilo {analisis.estilo}</Texto>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: espacio.s4 }} accessible accessibilityLabel={`Colores: ${analisis.paleta.map((p) => p.nombre).join(", ")}`}>
+                {analisis.paleta.map((p) => (
+                  // El color de la muestra es un dato de la foto, no un color de la interfaz.
+                  <View key={p.hex + p.nombre} style={{ width: 20, height: 20, borderRadius: radio.completo, backgroundColor: p.hex, borderWidth: 1, borderColor: c.border200 }} />
+                ))}
+              </View>
+              <Texto variante="bodySm" color="ink600" numberOfLines={1}>{analisis.paleta.map((p) => p.nombre).join(", ")}</Texto>
+            </>
+          ) : foto?.estado !== "error" ? (
+            <Texto variante="bodySm" color="ink600">Las propuestas se harán sin analizar esta foto.</Texto>
+          ) : null}
+        </View>
       </View>
-      <View style={{ flexDirection: "row", gap: espacio.s12 }}>
-        {[0, 1].map((i) => {
-          const ref = referencias[i];
-          return (
-            <View key={i} style={{ flex: 1, aspectRatio: 1 }}>
-              {ref ? (
-                <>
-                  <Image source={{ uri: ref.uri }} style={{ flex: 1, borderRadius: radio.tarjeta }} contentFit="cover" accessibilityLabel={`Referencia ${i + 1}`} />
-                  <Pressable
-                    onPress={() => cambiar({ referencias: referencias.filter((_, j) => j !== i) })}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Quitar referencia ${i + 1}`}
-                    hitSlop={8}
-                    style={{ position: "absolute", top: espacio.s8, right: espacio.s8, width: 32, height: 32, borderRadius: radio.completo, backgroundColor: c.surface000 + "E6", alignItems: "center", justifyContent: "center" }}
-                  >
-                    <Icono de={X} tamaño={18} />
-                  </Pressable>
-                </>
-              ) : (
-                <Pressable
-                  onPress={() => elegir(i)}
-                  disabled={subiendo !== null || (i === 1 && !referencias[0])}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Agregar referencia ${i + 1}`}
-                  style={({ pressed }) => ({
-                    flex: 1, borderRadius: radio.tarjeta, borderWidth: 1, borderStyle: "dashed", borderColor: c.border400,
-                    alignItems: "center", justifyContent: "center", gap: espacio.s8,
-                    backgroundColor: pressed ? c.surface200 : "transparent",
-                    opacity: i === 1 && !referencias[0] ? 0.5 : 1,
-                  })}
-                >
-                  {subiendo === i ? <ActivityIndicator color={c.brand600} /> : <Icono de={ImagePlus} color="ink600" />}
-                  <Texto variante="labelMd" color="ink600">{subiendo === i ? "Subiendo…" : "Agregar"}</Texto>
-                </Pressable>
-              )}
-            </View>
-          );
-        })}
-      </View>
+      {foto?.estado === "error" ? (
+        <Aviso
+          tipo="error"
+          mensaje={`${foto.error ?? "No pudimos mirar la foto"}. Puede reintentar o seguir: las propuestas no usarán sus colores.`}
+          accion={{ texto: "Reintentar", onPress: () => retomarFoto(true) }}
+        />
+      ) : null}
     </View>
   );
 }

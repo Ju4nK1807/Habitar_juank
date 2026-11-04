@@ -46,7 +46,7 @@ export default function Creditos() {
             <Texto variante="titleMd" accessibilityRole="header">Movimientos</Texto>
           </View>
         }
-        ListEmptyComponent={cargando ? <View style={{ gap: espacio.s12 }}>{[0, 1, 2].map((i) => <Esqueleto key={i} alto={56} />)}</View> : null}
+        ListEmptyComponent={cargando ? <View style={{ gap: espacio.s12 }}>{[0, 1, 2].map((i) => <Esqueleto key={i} alto={56} />)}</View> : undefined}
         ItemSeparatorComponent={() => <View style={{ height: 1, backgroundColor: c.border200 }} />}
         renderItem={({ item: m }) => {
           const t = TIPOS[m.tipo];

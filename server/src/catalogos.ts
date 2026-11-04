@@ -9,6 +9,9 @@ export const TIPOS = [
   { id: "aparador", nombre: "Aparador" },
   { id: "repisa", nombre: "Repisas" },
   { id: "zapatero", nombre: "Zapatero" },
+  { id: "sofa", nombre: "Sofá" },
+  { id: "mesa", nombre: "Mesa" },
+  { id: "cama", nombre: "Cama" },
   { id: "otro", nombre: "Otro" },
 ] as const;
 
@@ -18,6 +21,8 @@ export const MATERIALES = [
   { id: "mdf_lacado", nombre: "MDF lacado", descripcion: "MDF de 18 mm lacado en poliuretano", precioM2: 145_000, factorDias: 1.5, acabado: "laca poliuretano satinada" },
   { id: "pino", nombre: "Pino macizo", descripcion: "Madera de pino inmunizado", precioM2: 112_000, factorDias: 1.3, acabado: "aceite natural" },
   { id: "roble", nombre: "Roble macizo", descripcion: "Roble importado, alta durabilidad", precioM2: 365_000, factorDias: 1.6, acabado: "barniz mate protector" },
+  // Sofás y sillones: estructura de madera, espuma y tela; el área es la de las piezas tapizadas.
+  { id: "tapizado", nombre: "Tapizado en tela", descripcion: "Estructura de madera, espuma y tela antifluidos", precioM2: 135_000, factorDias: 1.4, acabado: "tela antifluidos" },
 ] as const;
 
 export type MaterialId = (typeof MATERIALES)[number]["id"];
@@ -45,3 +50,5 @@ export const LIMITES = {
 export const material = (id: string) => MATERIALES.find((m) => m.id === id);
 export const presupuesto = (id: string) => PRESUPUESTOS.find((p) => p.id === id);
 export const tipo = (id: string) => TIPOS.find((t) => t.id === id);
+/** Sin tipo elegido, la IA decide qué mueble recomendar a partir de la descripción. */
+export const TIPO_AUTO = { id: "auto", nombre: "Recomendación de la IA" } as const;

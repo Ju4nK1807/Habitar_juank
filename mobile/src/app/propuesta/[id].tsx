@@ -9,7 +9,7 @@ import { useConsulta } from "@/hooks/useConsulta";
 import { useTema } from "@/theme/tema";
 import { espacio, margen, radio } from "@/theme/tokens";
 import { usePreferencias } from "@/store/preferencias";
-import { fechaCorta, medida, plural, precioTexto } from "@/lib/formato";
+import { capitalizar, fechaCorta, medida, plural, precioTexto } from "@/lib/formato";
 import type { Propuesta, Proyecto } from "@/servicios/tipos";
 import { Pantalla, BarraFija } from "@/componentes/Pantalla";
 import { BotonIcono } from "@/componentes/BotonIcono";
@@ -65,7 +65,7 @@ export default function Detalle() {
           )}
           {p?.enEspacioRecorteUrl ? (
             <View style={{ position: "absolute", bottom: espacio.s12, left: espacio.s12, right: espacio.s12, flexDirection: "row", gap: espacio.s8 }}>
-              <Chip texto="En su foto" activo={!soloMueble} onPress={() => setSoloMueble(false)} />
+              <Chip texto="Así le quedaría" activo={!soloMueble} onPress={() => setSoloMueble(false)} />
               <Chip texto="Solo el mueble" activo={soloMueble} onPress={() => setSoloMueble(true)} />
             </View>
           ) : null}
@@ -83,8 +83,15 @@ export default function Detalle() {
                 <Etiqueta tipo="ia" texto="Generado con IA" />
                 <Texto variante="titleLg" accessibilityRole="header">{p.nombre}</Texto>
                 <Texto variante="bodyLg" color="ink600">{p.concepto}</Texto>
-                <Texto variante="bodyMd">{p.materialTexto} · {p.acabado}</Texto>
+                <Texto variante="bodyMd">{p.color ? `${capitalizar(p.color)} · ` : ""}{p.materialTexto} · {p.acabado}</Texto>
               </View>
+
+              {p.porQue ? (
+                <View style={{ gap: espacio.s4, paddingLeft: espacio.s12, borderLeftWidth: 3, borderLeftColor: c.accent600 }}>
+                  <Texto variante="labelSm" color="accentInk">POR QUÉ LE QUEDA</Texto>
+                  <Texto variante="bodyMd">{p.porQue}</Texto>
+                </View>
+              ) : null}
 
               <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: espacio.s12, flexWrap: "wrap" }}>
                 <View style={{ gap: espacio.s4 }}>
@@ -170,6 +177,8 @@ function FichaTecnica({ p }: { p: Propuesta }) {
   const { c } = useTema();
   const unidades = usePreferencias((s) => s.unidades);
   const filas: [string, string][] = [
+    ...(p.tipoMueble ? [["Mueble", p.tipoMueble] as [string, string]] : []),
+    ...(p.color ? [["Color", capitalizar(p.color)] as [string, string]] : []),
     ["Ancho", medida(p.medidas.anchoCm, unidades)],
     ["Alto", medida(p.medidas.altoCm, unidades)],
     ["Fondo", medida(p.medidas.fondoCm, unidades)],

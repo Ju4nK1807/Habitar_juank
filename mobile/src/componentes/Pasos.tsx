@@ -3,7 +3,7 @@ import { useTema } from "@/theme/tema";
 import { espacio, radio } from "@/theme/tokens";
 import { Texto } from "./Texto";
 
-export function Pasos({ actual, total = 4 }: { actual: number; total?: number }) {
+export function Pasos({ actual, total = 3 }: { actual: number; total?: number }) {
   const { c } = useTema();
   return (
     <View style={{ gap: espacio.s8 }} accessibilityLabel={`Paso ${actual} de ${total}`} accessible>

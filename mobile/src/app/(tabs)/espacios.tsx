@@ -47,7 +47,7 @@ export default function Espacios() {
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: espacio.s12 }}>
               {[0, 1, 2, 3].map((i) => <Esqueleto key={i} ancho="47%" alto={180} radio={radio.tarjeta} />)}
             </View>
-          ) : error ? null : (
+          ) : error ? undefined : (
             <EstadoVacio
               icono={Ruler}
               titulo="Sin espacios todavía"

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { ScrollView, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import { House, RefreshCw } from "lucide-react-native";
+import { House, RefreshCw, Sparkles } from "lucide-react-native";
 import { api, ErrorApi } from "@/servicios/api";
 import { useConsulta } from "@/hooks/useConsulta";
 import { useCatalogos } from "@/hooks/useCatalogos";
@@ -9,7 +9,7 @@ import { useTema } from "@/theme/tema";
 import { espacio, margen, radio } from "@/theme/tokens";
 import { usePreferencias } from "@/store/preferencias";
 import { useBorrador } from "@/store/borrador";
-import { medida, medidasTexto, precioTexto } from "@/lib/formato";
+import { capitalizar, medida, medidasTexto, precioTexto } from "@/lib/formato";
 import type { Propuesta } from "@/servicios/tipos";
 import { Pantalla, BarraFija } from "@/componentes/Pantalla";
 import { BarraSuperior } from "@/componentes/BarraSuperior";
@@ -20,6 +20,7 @@ import { Chip } from "@/componentes/Chip";
 import { Aviso } from "@/componentes/Aviso";
 import { Etiqueta, textoAjusteCorto, tipoAjuste } from "@/componentes/Etiqueta";
 import { Esqueleto } from "@/componentes/Esqueleto";
+import { Icono } from "@/componentes/Icono";
 import { Rejilla, TarjetaMueble, TarjetaMuebleEsqueleto } from "@/componentes/TarjetaMueble";
 
 type Orden = "recomendadas" | "precio" | "ajuste" | "compactas";
@@ -87,14 +88,14 @@ export default function Resultados() {
         <View style={{ paddingHorizontal: margen.lateral, paddingTop: espacio.s8, gap: espacio.s8 }}>
           {ctx ? (
             <>
-              <Texto variante="titleLg" accessibilityRole="header">{ctx.tipoNombre}</Texto>
+              <Texto variante="titleLg" accessibilityRole="header">{ctx.tipo === "auto" ? "Sus propuestas" : ctx.tipoNombre}</Texto>
               <Texto variante="bodyMd" color="ink600" numberOfLines={3}>«{ctx.descripcion}»</Texto>
               <Texto variante="bodySm" color="ink600">
                 {[
                   ctx.espacioNombre,
                   ctx.anchoMaxCm && ctx.altoMaxCm
                     ? `Máx. ${medida(ctx.anchoMaxCm, unidades)} × ${medida(ctx.altoMaxCm, unidades)}${ctx.fondoMaxCm ? ` × ${medida(ctx.fondoMaxCm, unidades)}` : ""}${ctx.medidasOrigen === "ia" ? " (estimado)" : ""}`
-                    : "Sin medidas del espacio",
+                    : null,
                   nombreMaterial,
                   nombrePresupuesto,
                 ].filter(Boolean).join(" · ")}
@@ -106,6 +107,15 @@ export default function Resultados() {
               <Esqueleto alto={20} />
               <Esqueleto alto={16} ancho="70%" />
             </>
+          ) : null}
+          {gen?.recomendacion ? (
+            <View style={{ marginTop: espacio.s8, padding: espacio.s16, gap: espacio.s8, borderRadius: radio.tarjeta, backgroundColor: c.accent100 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: espacio.s8 }}>
+                <Icono de={Sparkles} color="accentInk" tamaño={18} />
+                <Texto variante="labelSm" color="accentInk">NUESTRA RECOMENDACIÓN</Texto>
+              </View>
+              <Texto variante="bodyMd">{gen.recomendacion}</Texto>
+            </View>
           ) : null}
           {error ? <Aviso tipo={error.sinConexion ? "sinConexion" : "error"} mensaje={error.message} accion={{ texto: "Reintentar", onPress: recargar }} /> : null}
           {gen && gen.estado !== "listo" ? (
@@ -146,12 +156,12 @@ export default function Resultados() {
                 {([
                   ["", (p: Propuesta) => <Texto variante="labelMd" numberOfLines={2}>{p.nombre}</Texto>],
                   ["Medidas", (p: Propuesta) => <Texto variante="bodySm">{medidasTexto(p.medidas, unidades)}</Texto>],
+                  ["Color", (p: Propuesta) => <Texto variante="bodySm">{p.color ? capitalizar(p.color) : "—"}</Texto>],
                   ["Material", (p: Propuesta) => <Texto variante="bodySm">{p.materialTexto}</Texto>],
                   ["Precio", (p: Propuesta) => <Texto variante="labelMd">{precioTexto(p.precio, moneda)}</Texto>],
                   ["Ajuste", (p: Propuesta) => <Etiqueta tipo={tipoAjuste(p.ajuste)} texto={textoAjusteCorto(p.ajuste)} />],
                   ["Holgura", (p: Propuesta) => <Texto variante="bodySm">{p.ajuste === "sin_medidas" ? "—" : p.diferenciaCm >= 0 ? `${medida(p.diferenciaCm, unidades)} de ${p.dimensionCritica}` : `Excede ${medida(-p.diferenciaCm, unidades)}`}</Texto>],
                   ["Fabricación", (p: Propuesta) => <Texto variante="bodySm">~{p.fabricacionDias} días</Texto>],
-                  ["Presupuesto", (p: Propuesta) => <Texto variante="bodySm" color={p.dentroPresupuesto === false ? "warning600" : "ink900"}>{p.dentroPresupuesto === null ? "—" : p.dentroPresupuesto ? "Dentro" : "Fuera de la franja"}</Texto>],
                 ] as const).map(([fila, celda], i) => (
                   <View key={fila || "nombre"} style={{ flexDirection: "row", borderTopWidth: i ? 1 : 0, borderTopColor: c.border200, backgroundColor: i === 0 ? c.surface200 : undefined }}>
                     <View style={{ width: 96, padding: espacio.s12, justifyContent: "center" }}>

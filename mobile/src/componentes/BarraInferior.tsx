@@ -39,7 +39,7 @@ export function BotonFlotante({ onPress }: { onPress: () => void }) {
 }
 
 /** Barra de 4 pestañas con el botón flotante central que abre el flujo de creación. */
-export function BarraInferior({ state, navigation }: BottomTabBarProps) {
+export function BarraInferior({ state, emitter, navigateToTab }: BottomTabBarProps) {
   const { c } = useTema();
   const insets = useSafeAreaInsets();
   const rutas = state.routes.filter((r) => PESTAÑAS[r.name]);
@@ -53,8 +53,8 @@ export function BarraInferior({ state, navigation }: BottomTabBarProps) {
       <Pressable
         key={ruta.key}
         onPress={() => {
-          const e = navigation.emit({ type: "tabPress", target: ruta.key, canPreventDefault: true });
-          if (!activa && !e.defaultPrevented) navigation.navigate(ruta.name);
+          const e = emitter.emit({ type: "tabPress", target: ruta.key, canPreventDefault: true });
+          if (!activa && !e.defaultPrevented) navigateToTab(ruta.key);
         }}
         accessibilityRole="tab"
         accessibilityState={{ selected: activa }}

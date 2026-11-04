@@ -64,4 +64,6 @@ export function saludo(d = new Date()) {
   return h < 12 ? "Buenos días" : h < 19 ? "Buenas tardes" : "Buenas noches";
 }
 
+export const capitalizar = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : s);
+
 export const plural = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;

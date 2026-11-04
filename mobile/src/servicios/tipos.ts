@@ -21,6 +21,10 @@ export type Propuesta = {
   orden: number;
   nombre: string;
   concepto: string;
+  /** Qué mueble es, el color recomendado y por qué le queda al espacio (null en diseños anteriores). */
+  tipoMueble: string | null;
+  color: string | null;
+  porQue: string | null;
   medidas: Medidas;
   medidasTexto: string;
   material: string;
@@ -52,6 +56,8 @@ export type Propuesta = {
 };
 
 export type Analisis = {
+  /** sala, habitación, cocina… */
+  tipoEspacio?: string;
   estilo: string;
   paleta: { nombre: string; hex: string }[];
   piso: string;
@@ -59,6 +65,8 @@ export type Analisis = {
   obstaculos: string[];
   zonaLibre?: string;
   medidas?: { anchoCm: number; altoCm: number; fondoCm: number | null; confianza: "baja" | "media" | "alta"; referencias: string } | null;
+  /** Zona libre que ubicó la IA en la foto, a nivel del piso. */
+  marcas?: Marcas | null;
 };
 
 export type Espacio = {
@@ -87,7 +95,7 @@ export type Contexto = {
   medidasOrigen?: OrigenMedidas | null;
   fondoMaxCm: number | null;
   material: string;
-  presupuesto: string;
+  presupuesto: string | null;
   espacioId: number | null;
   espacioNombre: string | null;
   fotoUrl: string | null;
@@ -101,6 +109,8 @@ export type Generacion = {
   etapa: Etapa;
   imagenesListas: number;
   error: string | null;
+  /** Recomendación general según los colores del espacio; llega al terminar. */
+  recomendacion: string | null;
   contexto: Contexto;
   creado: string;
   terminado: string | null;
@@ -109,14 +119,15 @@ export type Generacion = {
 };
 
 export type PedidoGeneracion = {
-  tipo: string;
+  /** Sin tipo, la IA decide qué mueble recomendar. */
+  tipo?: string;
   descripcion: string;
   anchoMaxCm?: number | null;
   altoMaxCm?: number | null;
   medidasOrigen?: OrigenMedidas | null;
   fondoMaxCm?: number | null;
-  material: string;
-  presupuesto: string;
+  material?: string;
+  presupuesto?: string | null;
   espacioId?: number | null;
   referencias?: string[];
 };

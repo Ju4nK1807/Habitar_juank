@@ -5,15 +5,14 @@ import { useBorrador } from "@/store/borrador";
 export function rutaParaContinuar(): Href {
   const b = useBorrador.getState();
   if (b.generacionEnCurso) return "/nuevo/disenando";
-  if (!b.espacio && !b.omitioEspacio) return "/nuevo/espacio";
-  if (!b.tipo || !b.descripcion.trim()) return "/nuevo/necesidad";
-  return "/nuevo/restricciones";
+  if (!b.espacio && !b.foto && !b.omitioEspacio) return "/nuevo/espacio";
+  return "/nuevo/necesidad";
 }
 
 /** Abre el flujo en el paso pendiente, apilando los anteriores para que "atrás" funcione. */
 export function continuarBorrador() {
   const destino = rutaParaContinuar();
-  const orden: Href[] = ["/nuevo/espacio", "/nuevo/necesidad", "/nuevo/restricciones"];
+  const orden: Href[] = ["/nuevo/espacio", "/nuevo/necesidad"];
   if (destino === "/nuevo/disenando") {
     router.push(destino);
     return;

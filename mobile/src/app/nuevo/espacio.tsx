@@ -1,12 +1,16 @@
 import { useState } from "react";
 import { ScrollView, View } from "react-native";
 import { router } from "expo-router";
-import { Camera, LayoutGrid, ScanLine } from "lucide-react-native";
-import { api } from "@/servicios/api";
+import { Image } from "expo-image";
+import * as ImagePicker from "expo-image-picker";
+import { Camera, Images, LayoutGrid } from "lucide-react-native";
+import { api, urlArchivo } from "@/servicios/api";
 import { useConsulta } from "@/hooks/useConsulta";
-import { espacio, margen } from "@/theme/tokens";
+import { useTema } from "@/theme/tema";
+import { espacio, margen, radio } from "@/theme/tokens";
 import { useBorrador } from "@/store/borrador";
 import { cerrarFlujo } from "@/lib/flujo";
+import { usarFoto } from "@/lib/fotoEspacio";
 import { plural } from "@/lib/formato";
 import { Pantalla, BarraFija } from "@/componentes/Pantalla";
 import { BarraSuperior } from "@/componentes/BarraSuperior";
@@ -17,44 +21,79 @@ import { Esqueleto } from "@/componentes/Esqueleto";
 import { OpcionTarjeta } from "@/componentes/OpcionTarjeta";
 import { TarjetaEspacio } from "@/componentes/TarjetaEspacio";
 import { HojaInferior } from "@/componentes/HojaInferior";
+import { toast } from "@/componentes/Toast";
 
 export default function PasoEspacio() {
-  const { espacio: elegido, elegirEspacio } = useBorrador();
+  const { c } = useTema();
+  const { espacio: elegido, foto, elegirEspacio } = useBorrador();
   const [eligiendo, setEligiendo] = useState(false);
   const { datos: espacios, error, cargando, recargar } = useConsulta(api.espacios);
 
-  const capturar = (modo: "foto" | "escanear") => router.push({ pathname: "/espacio/nuevo", params: { modo, desde: "flujo" } });
+  const abrir = async (origen: "camara" | "galeria") => {
+    if (origen === "camara") {
+      const permiso = await ImagePicker.requestCameraPermissionsAsync();
+      if (!permiso.granted) {
+        toast.error("Habita no tiene permiso para usar la cámara. Actívelo en Ajustes o elija una foto de la galería");
+        return;
+      }
+    }
+    const opciones: ImagePicker.ImagePickerOptions = { mediaTypes: ["images"], quality: 0.7 };
+    const r = origen === "camara" ? await ImagePicker.launchCameraAsync(opciones) : await ImagePicker.launchImageLibraryAsync(opciones);
+    if (r.canceled) return;
+    usarFoto(r.assets[0].uri);
+  };
+
+  const imagen = foto?.uri ?? urlArchivo(elegido?.fotoUrl);
+  const hayEspacio = !!foto || !!elegido;
 
   return (
     <Pantalla bordes={["top", "bottom"]}>
       <BarraSuperior variante="flujo" paso={1} onCerrar={cerrarFlujo} />
       <ScrollView contentContainerStyle={{ padding: margen.lateral, gap: margen.secciones }}>
         <View style={{ gap: espacio.s8 }}>
-          <Texto variante="titleLg" accessibilityRole="header">¿Dónde irá el mueble?</Texto>
-          <Texto variante="bodyMd" color="ink600">Con el espacio, cada propuesta se ajusta a sus medidas reales y combina con lo que ya tiene.</Texto>
+          <Texto variante="titleLg" accessibilityRole="header">¿Dónde va el mueble?</Texto>
+          <Texto variante="bodyMd" color="ink600">
+            Tome una foto de su cuarto, sala o cocina. Miramos sus colores y le recomendamos qué mueble le queda mejor.
+          </Texto>
         </View>
 
-        {elegido ? (
+        {imagen ? (
           <View style={{ gap: espacio.s8 }}>
-            <Texto variante="labelSm" color="ink600">Espacio elegido</Texto>
-            <TarjetaEspacio espacio={elegido} horizontal seleccionado onPress={() => setEligiendo(true)} />
+            <Image
+              source={{ uri: imagen }}
+              style={{ width: "100%", aspectRatio: 4 / 3, borderRadius: radio.tarjeta, backgroundColor: c.surface200 }}
+              contentFit="cover"
+              accessibilityLabel={elegido ? `Foto de ${elegido.nombre}` : "Foto de su espacio"}
+            />
+            <Texto variante="bodySm" color="ink600">
+              {elegido ? `Espacio guardado: ${elegido.nombre}` : "Mientras escribe lo que quiere, miramos los colores de la foto."}
+            </Texto>
           </View>
+        ) : null}
+
+        {elegido && !elegido.fotoUrl ? (
+          <Aviso tipo="info" mensaje="Este espacio no tiene foto. Las propuestas no podrán usar sus colores ni verse en su espacio." />
         ) : null}
 
         {error ? <Aviso tipo={error.sinConexion ? "sinConexion" : "error"} mensaje={error.message} accion={{ texto: "Reintentar", onPress: recargar }} /> : null}
 
         <View style={{ gap: espacio.s12 }}>
-          <OpcionTarjeta icono={Camera} titulo="Tomar foto" descripcion="Foto del muro y sus medidas en un diagrama" onPress={() => capturar("foto")} />
-          <OpcionTarjeta icono={ScanLine} titulo="Escanear espacio" descripcion="Foto, medidas y obstáculos como enchufes, ventanas o zócalo" onPress={() => capturar("escanear")} />
+          <OpcionTarjeta
+            icono={Camera}
+            titulo={hayEspacio ? "Tomar otra foto" : "Tomar foto"}
+            descripcion="De frente al lugar donde irá el mueble"
+            onPress={() => abrir("camara")}
+          />
+          <OpcionTarjeta icono={Images} titulo="Elegir de la galería" descripcion="Una foto que ya tenga del espacio" onPress={() => abrir("galeria")} />
           {cargando && !espacios ? (
             <Esqueleto alto={88} radio={16} />
           ) : (
             <OpcionTarjeta
               icono={LayoutGrid}
-              titulo="Elegir espacio guardado"
+              titulo="Usar un espacio guardado"
               descripcion={espacios?.length ? plural(espacios.length, "espacio guardado", "espacios guardados") : ""}
               deshabilitado={!espacios?.length}
-              motivo="Aún no tiene espacios guardados. Tome una foto o escanee uno"
+              motivo="Aún no tiene espacios guardados. Tome una foto y queda guardado"
               onPress={() => setEligiendo(true)}
             />
           )}
@@ -70,13 +109,13 @@ export default function PasoEspacio() {
               elegirEspacio(null);
               router.push("/nuevo/necesidad");
             }}
-            accessibilityHint="Sigue sin espacio; escribirá las medidas en el paso 3"
+            accessibilityHint="Sigue sin foto; las propuestas no usarán los colores de su espacio"
           />
           <Boton
             titulo="Continuar"
             onPress={() => router.push("/nuevo/necesidad")}
-            deshabilitado={!elegido}
-            motivo="Elija un espacio o toque Omitir"
+            deshabilitado={!hayEspacio}
+            motivo="Tome o elija una foto, o toque Omitir"
             style={{ flex: 1 }}
           />
         </View>

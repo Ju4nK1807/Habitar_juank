@@ -8,7 +8,6 @@ export default function LayoutFlujo() {
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: c.surface000 } }}>
       <Stack.Screen name="espacio" />
       <Stack.Screen name="necesidad" />
-      <Stack.Screen name="restricciones" />
       <Stack.Screen name="disenando" options={{ gestureEnabled: false }} />
     </Stack>
   );
