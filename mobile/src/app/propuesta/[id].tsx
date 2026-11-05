@@ -3,7 +3,7 @@ import { Linking, Pressable, ScrollView, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { BookmarkPlus, Check, ChevronDown, ChevronLeft, ChevronUp, ExternalLink, Frame, ImageOff, Plus } from "lucide-react-native";
+import { BookmarkPlus, Check, ChevronDown, ChevronLeft, ChevronUp, ExternalLink, Frame, ImageOff, Plus, ShoppingBag } from "lucide-react-native";
 import { api, ErrorApi, urlArchivo } from "@/servicios/api";
 import { useConsulta } from "@/hooks/useConsulta";
 import { useTema } from "@/theme/tema";
@@ -105,6 +105,8 @@ export default function Detalle() {
                 {p.tienda ? null : <Etiqueta tipo={tipoAjuste(p.ajuste)} texto={p.etiquetaAjuste} />}
               </View>
 
+              {p.tienda ? <EnlaceTienda tienda={p.tienda} /> : null}
+
               {p.dentroPresupuesto === false ? (
                 <Aviso tipo="alerta" mensaje="Este precio queda fuera de la franja de presupuesto que eligió." />
               ) : null}
@@ -184,6 +186,31 @@ export default function Detalle() {
         </>
       ) : null}
     </Pantalla>
+  );
+}
+
+/** Dónde comprar el mueble: recuadro grande y tocable que abre la página del producto. */
+function EnlaceTienda({ tienda }: { tienda: { nombre: string; url: string } }) {
+  const { c } = useTema();
+  const abrir = () => void Linking.openURL(tienda.url).catch(() => toast.error("No pudimos abrir la página de la tienda. Intente de nuevo"));
+  return (
+    <Pressable
+      onPress={abrir}
+      accessibilityRole="link"
+      accessibilityLabel={`Abrir la página del mueble en ${tienda.nombre}`}
+      style={({ pressed }) => ({
+        flexDirection: "row", alignItems: "center", gap: espacio.s12, padding: espacio.s16, minHeight: 72,
+        borderRadius: radio.tarjeta, borderWidth: 1, borderColor: c.brand600, backgroundColor: pressed ? c.brand100 : c.surface100,
+      })}
+    >
+      <Icono de={ShoppingBag} color="brandInk" />
+      <View style={{ flex: 1, gap: espacio.s4 }}>
+        <Texto variante="titleSm">Disponible en {tienda.nombre}</Texto>
+        <Texto variante="bodySm" color="ink600" numberOfLines={1}>{tienda.url.replace(/^https?:\/\/(www\.)?/, "").split("/")[0]}</Texto>
+        <Texto variante="labelMd" color="brandInk">Abrir la página para comprarlo</Texto>
+      </View>
+      <Icono de={ExternalLink} color="brandInk" />
+    </Pressable>
   );
 }
 
