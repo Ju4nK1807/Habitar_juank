@@ -25,6 +25,8 @@ export type Propuesta = {
   tipoMueble: string | null;
   color: string | null;
   porQue: string | null;
+  /** Producto real de tienda: el precio es el de la tienda hoy y `url` lleva a su página. */
+  tienda: { nombre: string; url: string } | null;
   medidas: Medidas;
   medidasTexto: string;
   material: string;

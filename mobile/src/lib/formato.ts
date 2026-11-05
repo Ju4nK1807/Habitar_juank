@@ -14,6 +14,11 @@ export const CM_POR_PULGADA = 2.54;
 
 const decimal = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1).replace(".", ","));
 
+/** El precio de un producto de tienda es real (sin "aprox." en pesos); el de un diseño a medida, estimado. */
+export function precioPropuesta(p: { precio: Precio; tienda: unknown }, moneda: Moneda) {
+  return precioTexto(p.precio, moneda, !p.tienda || moneda === "USD");
+}
+
 export function medida(cm: number, u: Unidades) {
   return u === "in" ? `${decimal(Math.round((cm / CM_POR_PULGADA) * 10) / 10)} in` : `${decimal(cm)} cm`;
 }

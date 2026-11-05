@@ -9,7 +9,7 @@ import { useTema } from "@/theme/tema";
 import { espacio, margen, radio } from "@/theme/tokens";
 import { usePreferencias } from "@/store/preferencias";
 import { useBorrador } from "@/store/borrador";
-import { capitalizar, medida, medidasTexto, precioTexto } from "@/lib/formato";
+import { capitalizar, medida, medidasTexto, precioPropuesta } from "@/lib/formato";
 import type { Propuesta } from "@/servicios/tipos";
 import { Pantalla, BarraFija } from "@/componentes/Pantalla";
 import { BarraSuperior } from "@/componentes/BarraSuperior";
@@ -158,10 +158,10 @@ export default function Resultados() {
                   ["Medidas", (p: Propuesta) => <Texto variante="bodySm">{medidasTexto(p.medidas, unidades)}</Texto>],
                   ["Color", (p: Propuesta) => <Texto variante="bodySm">{p.color ? capitalizar(p.color) : "—"}</Texto>],
                   ["Material", (p: Propuesta) => <Texto variante="bodySm">{p.materialTexto}</Texto>],
-                  ["Precio", (p: Propuesta) => <Texto variante="labelMd">{precioTexto(p.precio, moneda)}</Texto>],
+                  ["Precio", (p: Propuesta) => <Texto variante="labelMd">{precioPropuesta(p, moneda)}</Texto>],
                   ["Ajuste", (p: Propuesta) => <Etiqueta tipo={tipoAjuste(p.ajuste)} texto={textoAjusteCorto(p.ajuste)} />],
                   ["Holgura", (p: Propuesta) => <Texto variante="bodySm">{p.ajuste === "sin_medidas" ? "—" : p.diferenciaCm >= 0 ? `${medida(p.diferenciaCm, unidades)} de ${p.dimensionCritica}` : `Excede ${medida(-p.diferenciaCm, unidades)}`}</Texto>],
-                  ["Fabricación", (p: Propuesta) => <Texto variante="bodySm">~{p.fabricacionDias} días</Texto>],
+                  ["Dónde", (p: Propuesta) => <Texto variante="bodySm">{p.tienda ? p.tienda.nombre : `A medida, ~${p.fabricacionDias} días`}</Texto>],
                 ] as const).map(([fila, celda], i) => (
                   <View key={fila || "nombre"} style={{ flexDirection: "row", borderTopWidth: i ? 1 : 0, borderTopColor: c.border200, backgroundColor: i === 0 ? c.surface200 : undefined }}>
                     <View style={{ width: 96, padding: espacio.s12, justifyContent: "center" }}>

@@ -1,15 +1,15 @@
 import { useState } from "react";
-import { Pressable, ScrollView, View } from "react-native";
+import { Linking, Pressable, ScrollView, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { BookmarkPlus, Check, ChevronDown, ChevronLeft, ChevronUp, Frame, ImageOff, Plus } from "lucide-react-native";
+import { BookmarkPlus, Check, ChevronDown, ChevronLeft, ChevronUp, ExternalLink, Frame, ImageOff, Plus } from "lucide-react-native";
 import { api, ErrorApi, urlArchivo } from "@/servicios/api";
 import { useConsulta } from "@/hooks/useConsulta";
 import { useTema } from "@/theme/tema";
 import { espacio, margen, radio } from "@/theme/tokens";
 import { usePreferencias } from "@/store/preferencias";
-import { capitalizar, fechaCorta, medida, plural, precioTexto } from "@/lib/formato";
+import { capitalizar, fechaCorta, medida, plural, precioPropuesta, precioTexto } from "@/lib/formato";
 import type { Propuesta, Proyecto } from "@/servicios/tipos";
 import { Pantalla, BarraFija } from "@/componentes/Pantalla";
 import { BotonIcono } from "@/componentes/BotonIcono";
@@ -83,7 +83,7 @@ export default function Detalle() {
                 <Etiqueta tipo="ia" texto="Generado con IA" />
                 <Texto variante="titleLg" accessibilityRole="header">{p.nombre}</Texto>
                 <Texto variante="bodyLg" color="ink600">{p.concepto}</Texto>
-                <Texto variante="bodyMd">{p.color ? `${capitalizar(p.color)} · ` : ""}{p.materialTexto} · {p.acabado}</Texto>
+                <Texto variante="bodyMd">{[p.color && capitalizar(p.color), p.materialTexto, p.acabado].filter(Boolean).join(" · ")}</Texto>
               </View>
 
               {p.porQue ? (
@@ -95,13 +95,14 @@ export default function Detalle() {
 
               <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: espacio.s12, flexWrap: "wrap" }}>
                 <View style={{ gap: espacio.s4 }}>
-                  <Texto variante="labelSm" color="ink600">Precio estimado</Texto>
-                  <Texto variante="titleLg">{precioTexto(p.precio, moneda)}</Texto>
+                  <Texto variante="labelSm" color="ink600">{p.tienda ? `PRECIO EN ${p.tienda.nombre.toUpperCase()}` : "Precio estimado"}</Texto>
+                  <Texto variante="titleLg">{precioPropuesta(p, moneda)}</Texto>
                   <Texto variante="bodySm" color="ink600">
-                    {moneda === "USD" && p.precio.fechaTrm ? `TRM del ${fechaCorta(p.precio.fechaTrm + "T12:00:00")} · ` : ""}Material, herrajes y mano de obra
+                    {moneda === "USD" && p.precio.fechaTrm ? `TRM del ${fechaCorta(p.precio.fechaTrm + "T12:00:00")} · ` : ""}
+                    {p.tienda ? "Precio de la tienda al buscarlo. Puede cambiar" : "Material, herrajes y mano de obra"}
                   </Texto>
                 </View>
-                <Etiqueta tipo={tipoAjuste(p.ajuste)} texto={p.etiquetaAjuste} />
+                {p.tienda ? null : <Etiqueta tipo={tipoAjuste(p.ajuste)} texto={p.etiquetaAjuste} />}
               </View>
 
               {p.dentroPresupuesto === false ? (
@@ -117,7 +118,7 @@ export default function Detalle() {
 
               <FichaTecnica p={p} />
 
-              <View style={{ gap: espacio.s12 }}>
+              {p.despiece.length ? <View style={{ gap: espacio.s12 }}>
                 <Pressable
                   onPress={() => setDespiece((v) => !v)}
                   accessibilityRole="button"
@@ -138,7 +139,7 @@ export default function Detalle() {
                     ))}
                   </View>
                 ) : null}
-              </View>
+              </View> : null}
             </>
           ) : cargando ? (
             <View style={{ gap: espacio.s12 }}>
@@ -155,7 +156,20 @@ export default function Detalle() {
       {p ? (
         <BarraFija>
           <View style={{ flexDirection: "row", gap: espacio.s12 }}>
-            <Boton titulo="Ver en mi espacio" icono={Frame} variante="secundario" onPress={() => setVerEspacio(true)} style={{ flex: 1 }} />
+            {p.tienda ? (
+              <Boton
+                titulo={`Ver en ${p.tienda.nombre}`}
+                icono={ExternalLink}
+                variante="secundario"
+                onPress={() => {
+                  void Linking.openURL(p.tienda!.url).catch(() => toast.error("No pudimos abrir la página de la tienda. Intente de nuevo"));
+                }}
+                style={{ flex: 1 }}
+                accessibilityHint="Abre la página del producto en el navegador"
+              />
+            ) : (
+              <Boton titulo="Ver en mi espacio" icono={Frame} variante="secundario" onPress={() => setVerEspacio(true)} style={{ flex: 1 }} />
+            )}
             <Boton titulo="Guardar" icono={BookmarkPlus} onPress={() => setGuardar(true)} style={{ flex: 1 }} accessibilityHint="Guardar en un proyecto" />
           </View>
         </BarraFija>
@@ -176,7 +190,9 @@ export default function Detalle() {
 function FichaTecnica({ p }: { p: Propuesta }) {
   const { c } = useTema();
   const unidades = usePreferencias((s) => s.unidades);
-  const filas: [string, string][] = [
+  // Un producto de tienda no tiene despiece ni fabricación: se muestra lo que se sabe de él.
+  const deTienda = new Set(["Acabado", "Puertas", "Cajones", "Tablero", "Fabricación"]);
+  const todas: [string, string][] = [
     ...(p.tipoMueble ? [["Mueble", p.tipoMueble] as [string, string]] : []),
     ...(p.color ? [["Color", capitalizar(p.color)] as [string, string]] : []),
     ["Ancho", medida(p.medidas.anchoCm, unidades)],
@@ -195,6 +211,10 @@ function FichaTecnica({ p }: { p: Propuesta }) {
         : "Sin medidas",
     ],
   ];
+  const filas = p.tienda
+    ? [["Tienda", p.tienda.nombre] as [string, string], ...todas.filter(([k]) => !deTienda.has(k))].map(([k, v]): [string, string] =>
+        k === "Ancho" || k === "Alto" || k === "Fondo" ? [k, `${v} aprox.`] : [k, v])
+    : todas;
   return (
     <View style={{ gap: espacio.s12 }}>
       <Texto variante="titleMd" accessibilityRole="header">Ficha técnica</Texto>

@@ -1,16 +1,17 @@
 const URL_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 
 // La capa gratuita a veces responde 503 por saturación (y tarda hasta 14 s en decirlo).
-// Lite va primero: en las pruebas respondió en ~3,5 s mientras Flash estaba saturado.
-// Se recorre la cadena una vez por ronda; la segunda ronda espera un poco antes.
-const MODELOS = ["gemini-flash-lite-latest", "gemini-flash-latest", "gemini-3.5-flash"];
+// Cada modelo tiene su propio cupo y su propia saturación: con seis en la cadena casi siempre
+// responde alguno. Lite va primero porque responde más rápido. (2.5 ya no está disponible.)
+const MODELOS = ["gemini-flash-lite-latest", "gemini-3.1-flash-lite", "gemini-3.5-flash-lite", "gemini-3.5-flash", "gemini-3.6-flash", "gemini-flash-latest"];
 const RONDAS = 2;
+const LIMITE_TOTAL_MS = 100_000;
 
 /**
  * Para analizar fotos (estimar medidas, entender el espacio) conviene un modelo más capaz primero.
  * Cuando Flash está saturado responde 503 al instante y se pasa al siguiente.
  */
-export const MODELOS_VISION = ["gemini-3.5-flash", "gemini-flash-latest", "gemini-flash-lite-latest"];
+export const MODELOS_VISION = ["gemini-3.5-flash", "gemini-3.6-flash", "gemini-3.5-flash-lite", "gemini-flash-lite-latest", "gemini-3.1-flash-lite", "gemini-flash-latest"];
 
 export type Parte = { text: string } | { inlineData: { mimeType: string; data: string } };
 
@@ -22,9 +23,12 @@ export async function generarJson<T>(partes: Parte[], esquema: object, señal?: 
   if (!clave) throw new ErrorIa("Falta GEMINI_API_KEY en server/.env");
 
   let ultimoError = "";
+  // Tope total: con todo saturado es mejor avisar a tiempo que dejar a la persona esperando minutos.
+  const limite = Date.now() + LIMITE_TOTAL_MS;
   for (let ronda = 0; ronda < RONDAS; ronda++) {
     if (ronda > 0) await new Promise((ok) => setTimeout(ok, 1500));
     for (const modelo of modelos) {
+      if (Date.now() > limite) throw new ErrorIa(`Gemini no respondió a tiempo. Último error: ${ultimoError}`);
       const inicio = Date.now();
       señal?.throwIfAborted();
       let r: Response;

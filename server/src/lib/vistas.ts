@@ -10,6 +10,8 @@ export type FilaPropuesta = { id: number; generacion_id: number; orden: number; 
 type Datos = {
   nombre: string; concepto: string; material: string; acabado: string;
   tipoMueble?: string; color?: string; porQue?: string;
+  /** Producto real de tienda: el precio es el de la tienda y lleva su enlace. */
+  tienda?: string; url?: string;
   anchoCm: number; altoCm: number; fondoCm: number; puertas: number; cajones: number;
   despiece: Pieza[]; precioCop: number; areaM2: number; fabricacionDias: number;
 };
@@ -41,10 +43,12 @@ export function propuesta(f: FilaPropuesta, c: Contexto, trm: Trm | null) {
     tipoMueble: d.tipoMueble ?? null,
     color: d.color ?? null,
     porQue: d.porQue ?? null,
+    tienda: d.tienda && d.url ? { nombre: d.tienda, url: d.url } : null,
     medidas: { anchoCm: d.anchoCm, altoCm: d.altoCm, fondoCm: d.fondoCm },
     medidasTexto: `${cm(d.anchoCm)} × ${cm(d.altoCm)} × ${cm(d.fondoCm)} cm`,
     material: d.material,
-    materialTexto: material(d.material)?.nombre ?? d.material,
+    // Los diseños a medida guardan el id del catálogo; los productos de tienda, el texto.
+    materialTexto: material(d.material)?.nombre ?? (d.material ? d.material[0].toUpperCase() + d.material.slice(1) : ""),
     acabado: d.acabado,
     puertas: d.puertas,
     cajones: d.cajones,

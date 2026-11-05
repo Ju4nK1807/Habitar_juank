@@ -22,14 +22,13 @@ const LIMITE_SIN_CAMBIOS_MS = 90_000;
 const MENSAJES = {
   propuestas: [
     "Leyendo lo que quiere",
-    "Eligiendo colores que combinen con su espacio. Toma unos 30 segundos",
-    "Armando el despiece de cada propuesta",
-    "Calculando material y precio",
+    "Eligiendo colores que combinen con su espacio. Toma unos 40 segundos",
+    "Buscando muebles en Éxito y Falabella",
+    "Comparando precios y modelos",
   ],
   imagenes: [
-    "Dibujando las cuatro propuestas",
-    "Cuidando la luz y los materiales",
-    "Revisando proporciones",
+    "Trayendo las fotos de los muebles",
+    "Revisando cada producto",
   ],
   ubicando: [
     "Poniendo cada propuesta en su foto",
@@ -111,7 +110,7 @@ export default function Diseñando() {
 
   useEffect(() => {
     AccessibilityInfo.announceForAccessibility(
-      etapa === "propuestas" ? "Diseñando las propuestas" : etapa === "imagenes" ? "Dibujando las imágenes" : "Poniendo las propuestas en su foto",
+      etapa === "propuestas" ? "Buscando muebles en las tiendas" : etapa === "imagenes" ? "Trayendo las fotos de los muebles" : "Poniendo las propuestas en su foto",
     );
   }, [etapa]);
 
@@ -176,19 +175,19 @@ export default function Diseñando() {
               accessible
               accessibilityRole="progressbar"
               accessibilityLabel="Progreso del diseño"
-              accessibilityValue={{ text: etapa === "propuestas" ? "Diseñando propuestas" : etapa === "imagenes" ? `${gen?.imagenesListas ?? 0} de 4 imágenes` : "Poniendo en su foto" }}
+              accessibilityValue={{ text: etapa === "propuestas" ? "Buscando muebles" : etapa === "imagenes" ? `${gen?.imagenesListas ?? 0} de 4 fotos` : "Poniendo en su foto" }}
               style={{ height: 8, borderRadius: radio.completo, backgroundColor: c.surface300, overflow: "hidden" }}
             >
               <Animated.View style={{ height: "100%", borderRadius: radio.completo, backgroundColor: c.brand500, width: progreso.interpolate({ inputRange: [0, 1], outputRange: ["0%", "100%"] }) }} />
             </View>
 
             <View style={{ gap: espacio.s12 }}>
-              <Etapa icono={etapa === "propuestas" ? LoaderCircle : Check} hecho={etapa !== "propuestas"} texto="Propuestas con medidas, despiece y precio" />
+              <Etapa icono={etapa === "propuestas" ? LoaderCircle : Check} hecho={etapa !== "propuestas"} texto="Muebles reales con su precio en tienda" />
               <Etapa
                 icono={etapa === "imagenes" ? LoaderCircle : etapa === "ubicando" ? Check : Circle}
                 hecho={etapa === "ubicando"}
                 activo={etapa === "imagenes"}
-                texto={etapa === "imagenes" ? `Imágenes: ${gen?.imagenesListas ?? 0} de 4 listas` : "Imágenes de las cuatro propuestas"}
+                texto={etapa === "imagenes" ? `Fotos: ${gen?.imagenesListas ?? 0} de 4 listas` : "Fotos de los cuatro muebles"}
               />
               {ubicable ? (
                 <Etapa

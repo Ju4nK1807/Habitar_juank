@@ -6,7 +6,7 @@ import { espacio, radio } from "@/theme/tokens";
 import { urlArchivo } from "@/servicios/api";
 import type { Propuesta } from "@/servicios/tipos";
 import { usePreferencias } from "@/store/preferencias";
-import { capitalizar, medidasTexto, precioTexto } from "@/lib/formato";
+import { capitalizar, medidasTexto, precioPropuesta } from "@/lib/formato";
 import { Texto } from "./Texto";
 import { Icono } from "./Icono";
 import { Etiqueta, textoAjusteCorto, tipoAjuste } from "./Etiqueta";
@@ -28,7 +28,7 @@ export function TarjetaMueble({ propuesta: p, onPress, destacado }: Props) {
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${p.nombre}. ${medidasTexto(p.medidas, unidades)}. ${p.materialTexto}. ${precioTexto(p.precio, moneda)}. ${p.etiquetaAjuste}`}
+      accessibilityLabel={`${p.nombre}. ${medidasTexto(p.medidas, unidades)}. ${p.materialTexto}. ${precioPropuesta(p, moneda)}. ${p.tienda ? `En ${p.tienda.nombre}` : p.etiquetaAjuste}`}
       style={({ pressed }) => ({
         flex: 1, borderRadius: radio.tarjeta, backgroundColor: c.surface100, overflow: "hidden",
         borderWidth: 1, borderColor: c.border200, opacity: pressed ? 0.9 : 1,
@@ -63,10 +63,10 @@ export function TarjetaMueble({ propuesta: p, onPress, destacado }: Props) {
         <Texto variante="titleSm" numberOfLines={2} style={{ minHeight: 48 }}>{p.nombre}</Texto>
         <Texto variante="bodySm" color="ink600" numberOfLines={1}>{medidasTexto(p.medidas, unidades)}</Texto>
         <Texto variante="bodySm" color="ink600" numberOfLines={1}>{p.color ? `${capitalizar(p.color)} · ${p.materialTexto}` : p.materialTexto}</Texto>
-        <Texto variante="labelLg" style={{ marginTop: espacio.s4 }} numberOfLines={1}>{precioTexto(p.precio, moneda)}</Texto>
+        <Texto variante="labelLg" style={{ marginTop: espacio.s4 }} numberOfLines={1}>{precioPropuesta(p, moneda)}</Texto>
         <View style={{ flex: 1 }} />
         <View style={{ marginTop: espacio.s8 }}>
-          <Etiqueta tipo={tipoAjuste(p.ajuste)} texto={textoAjusteCorto(p.ajuste)} />
+          {p.tienda ? <Etiqueta tipo="marca" texto={`En ${p.tienda.nombre}`} /> : <Etiqueta tipo={tipoAjuste(p.ajuste)} texto={textoAjusteCorto(p.ajuste)} />}
         </View>
       </View>
     </Pressable>

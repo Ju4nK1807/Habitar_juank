@@ -65,7 +65,7 @@ export default function PasoNecesidad() {
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: margen.lateral, gap: margen.secciones }}>
         <View style={{ gap: espacio.s8 }}>
           <Texto variante="titleLg" accessibilityRole="header">¿Qué le gustaría?</Texto>
-          <Texto variante="bodyMd" color="ink600">Descríbalo con sus palabras. Nosotros elegimos el tipo, el color y el material.</Texto>
+          <Texto variante="bodyMd" color="ink600">Descríbalo con sus palabras. Buscamos en Éxito y Falabella los muebles que mejor combinan con su espacio.</Texto>
         </View>
 
         <SuEspacio />

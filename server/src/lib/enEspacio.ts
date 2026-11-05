@@ -89,6 +89,8 @@ export async function dibujarEnFoto(p: { id: number; datos: string; imagen_url: 
     `Place the exact ${pieza} shown in the second image (same design, same ${d.colorEn ?? ""} color, same materials) ${d.ubicacionEn || "in the free space against the wall"}.`,
     `Real size: ${d.anchoCm} cm wide, ${d.altoCm} cm high, ${d.fondoCm} cm deep. Keep it to scale with the room: a baseboard is about 8 cm high, a power outlet plate about 11 cm, a door about 200 cm.`,
     "Photorealistic, as if it were really there: same camera perspective, aligned with the walls, the corners and the baseboard, standing on the floor, natural lighting from the room, soft contact shadows.",
+    // Las fotos de tienda suelen traer una sala decorada: se toma solo el mueble.
+    `From the second image take only the ${pieza} (with its own cushions if it has them); do not copy anything else from it: no paintings, plants, lamps, windows, walls or floor.`,
     "Keep everything else exactly as it is: walls, power outlets, switches, doors, windows and the other furniture. Same framing.",
   ].join(" ");
 
