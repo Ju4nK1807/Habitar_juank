@@ -73,13 +73,35 @@ type DatosEdicion = { tipoEn?: string; colorEn?: string; ubicacionEn?: string; a
  * propuesta como referencia, para que sea el mismo mueble. A diferencia del pegado a escala,
  * respeta la perspectiva, las esquinas y la luz; el tamaño es aproximado (se le dan las medidas).
  */
-export async function dibujarEnFoto(p: { id: number; datos: string; imagen_url: string | null }, fotoUrl: string, ctx: Contexto, señal?: AbortSignal) {
-  if (!p.imagen_url) throw new ErrorApi(409, "sin_imagen", "Esta propuesta no tiene imagen para ponerla en su foto");
-  const d = JSON.parse(p.datos) as DatosEdicion;
+/** La foto del espacio lista para editar: orientada y del tamaño que pide el modelo. */
+export async function fotoParaEditar(fotoUrl: string) {
   const foto = await sharp(await readFile(join(DIR_FOTOS, basename(fotoUrl)))).rotate().toBuffer();
   const { width: W = 1024, height: H = 1024 } = await sharp(foto).metadata();
   const { ancho, alto } = medidaEdicion(W, H);
-  const entrada = await sharp(foto).resize(ancho, alto, { fit: "fill" }).jpeg({ quality: 90 }).toBuffer();
+  return { imagen: await sharp(foto).resize(ancho, alto, { fit: "fill" }).jpeg({ quality: 90 }).toBuffer(), ancho, alto };
+}
+
+/**
+ * "Ordenar mi espacio": quita cajas, ropa y objetos sueltos de la foto y deja el cuarto igual
+ * (paredes, piso, enchufes, muebles grandes). Sobre esa foto se dibujan después los muebles.
+ */
+export async function ordenarFoto(fotoUrl: string, señal?: AbortSignal) {
+  const { imagen, ancho, alto } = await fotoParaEditar(fotoUrl);
+  const prompt = "Edit this photo of a real room: tidy it up. Remove all clutter: boxes, bags, clothes, shoes and slippers, loose objects on the floor and on furniture, cables and trash. Keep the room itself exactly the same: same walls and wall color, same floor, same baseboards, same doors, windows, power outlets and switches, same camera angle, perspective and lighting. Keep the large furniture that is already there (beds, sofas, wardrobes, tables), only tidy them (for example a neatly made bed). Fill the cleared areas with the same floor and wall. Photorealistic, clean and tidy.";
+  const ordenada = await sharp(await editarFoto(prompt, [imagen], ancho, alto, señal)).jpeg({ quality: 90 }).toBuffer();
+  const archivo = randomUUID();
+  await writeFile(join(DIR_IMAGENES, `${archivo}.jpg`), ordenada);
+  return { imagen: ordenada, ancho, alto, url: `/imagenes/${archivo}.jpg` };
+}
+
+export async function dibujarEnFoto(
+  p: { id: number; datos: string; imagen_url: string | null }, fotoUrl: string, ctx: Contexto, señal?: AbortSignal,
+  base?: { imagen: Buffer; ancho: number; alto: number },
+) {
+  if (!p.imagen_url) throw new ErrorApi(409, "sin_imagen", "Esta propuesta no tiene imagen para ponerla en su foto");
+  const d = JSON.parse(p.datos) as DatosEdicion;
+  // Con "Ordenar mi espacio" se parte de la foto ya ordenada; si no, de la original.
+  const { imagen: entrada, ancho, alto } = base ?? (await fotoParaEditar(fotoUrl));
   const referencia = await readFile(join(DIR_IMAGENES, basename(p.imagen_url)));
 
   const lugar = ctx.analisis?.tipoEspacio && ctx.analisis.tipoEspacio !== "otro" ? ctx.analisis.tipoEspacio : "room";

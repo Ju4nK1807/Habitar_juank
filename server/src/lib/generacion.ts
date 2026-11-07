@@ -6,7 +6,7 @@ import { db, DIR_IMAGENES } from "../db.ts";
 import { TIPO_AUTO } from "../catalogos.ts";
 import { generarJson, type Parte } from "../ia/gemini.ts";
 import { ErrorCupo } from "../ia/imagenes.ts";
-import { dibujarEnFoto, MENSAJE_CUPO } from "./enEspacio.ts";
+import { dibujarEnFoto, MENSAJE_CUPO, ordenarFoto } from "./enEspacio.ts";
 import { reembolsar } from "./creditos.ts";
 import { fotoComoParte } from "./fotos.ts";
 import { buscarEnTiendas, descargarImagen, type Producto } from "./tiendas.ts";
@@ -31,6 +31,8 @@ export type Contexto = {
   referencias: string[];
   /** El espacio tiene foto: las propuestas se dibujan en ella al final. */
   ubicable?: boolean;
+  /** "Ordenar mi espacio": quitar el desorden de la foto antes de poner los muebles. */
+  ordenar?: boolean;
 };
 
 /** Lo que la IA decide buscar, mirando la foto y lo que pidió la persona. */
@@ -214,7 +216,16 @@ export async function ejecutarGeneracion(id: number, dispositivo: string, c: Con
         id: number; datos: string; imagen_url: string | null;
       }[];
       let sinCupo = 0;
-      await Promise.all(filas.map((f) => dibujarEnFoto(f, c.fotoUrl!, c, señal).catch((e) => {
+      // Si falla el orden, se sigue con la foto original: mejor el mueble en la foto tal cual que nada.
+      const base = c.ordenar
+        ? await ordenarFoto(c.fotoUrl, señal).catch((e) => {
+            if (señal.aborted) throw e;
+            console.warn(`Ordenar la foto de la generación ${id} falló:`, (e as Error).message);
+            return undefined;
+          })
+        : undefined;
+      if (base) actualizar(id, { foto_ordenada_url: base.url });
+      await Promise.all(filas.map((f) => dibujarEnFoto(f, c.fotoUrl!, c, señal, base).catch((e) => {
         if (señal.aborted) throw e;
         if (e instanceof ErrorCupo) sinCupo++;
         console.warn(`Dibujar propuesta ${f.id} en la foto falló:`, (e as Error).message);

@@ -49,7 +49,7 @@ export default function PasoNecesidad() {
     setErrorEnvio(null);
     try {
       const esp = b.espacio ?? (b.foto ? await espacioDeLaFoto() : null);
-      const r = await api.generar({ descripcion: b.descripcion.trim(), espacioId: esp?.id ?? null });
+      const r = await api.generar({ descripcion: b.descripcion.trim(), espacioId: esp?.id ?? null, ordenar: !!esp?.fotoUrl && b.ordenar });
       b.cambiar({ generacionEnCurso: r.id });
       router.push("/nuevo/disenando");
     } catch (e) {
@@ -69,6 +69,19 @@ export default function PasoNecesidad() {
         </View>
 
         <SuEspacio />
+
+        {b.foto || b.espacio?.fotoUrl ? (
+          <View style={{ gap: espacio.s8 }}>
+            <GrupoChips>
+              <Chip texto="Ordenar mi espacio" multiple activo={b.ordenar} onPress={() => b.cambiar({ ordenar: !b.ordenar })} />
+            </GrupoChips>
+            <Texto variante="bodySm" color="ink600">
+              {b.ordenar
+                ? "Antes de poner los muebles quitamos de la foto cajas, ropa y objetos sueltos. Paredes, piso y muebles grandes quedan igual."
+                : "Si su espacio tiene cajas o desorden, actívelo y lo vemos ordenado."}
+            </Texto>
+          </View>
+        ) : null}
 
         <View style={{ gap: espacio.s12 }}>
           <CampoTexto

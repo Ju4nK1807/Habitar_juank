@@ -103,6 +103,7 @@ export type Contexto = {
   fotoUrl: string | null;
   referencias: string[];
   ubicable?: boolean;
+  ordenar?: boolean;
 };
 
 export type Generacion = {
@@ -132,6 +133,7 @@ export type PedidoGeneracion = {
   presupuesto?: string | null;
   espacioId?: number | null;
   referencias?: string[];
+  ordenar?: boolean;
 };
 
 export type Proyecto = {

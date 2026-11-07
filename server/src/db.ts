@@ -92,6 +92,7 @@ const columnas = (tabla: string) => (db.prepare(`PRAGMA table_info(${tabla})`).a
 if (!columnas("propuestas").includes("en_espacio_url")) db.exec("ALTER TABLE propuestas ADD COLUMN en_espacio_url TEXT");
 if (!columnas("propuestas").includes("en_espacio_pos")) db.exec("ALTER TABLE propuestas ADD COLUMN en_espacio_pos REAL");
 if (!columnas("propuestas").includes("en_espacio_recorte_url")) db.exec("ALTER TABLE propuestas ADD COLUMN en_espacio_recorte_url TEXT");
+if (!columnas("generaciones").includes("foto_ordenada_url")) db.exec("ALTER TABLE generaciones ADD COLUMN foto_ordenada_url TEXT");
 if (!columnas("generaciones").includes("recomendacion")) db.exec("ALTER TABLE generaciones ADD COLUMN recomendacion TEXT");
 if (!columnas("espacios").includes("marcas")) db.exec("ALTER TABLE espacios ADD COLUMN marcas TEXT");
 // "persona" = las midió con metro; "ia" = las estimó la IA mirando la foto.

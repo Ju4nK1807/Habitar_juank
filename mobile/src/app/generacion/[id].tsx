@@ -62,7 +62,7 @@ export default function Resultados() {
     try {
       const r = await api.generar({
         tipo: ctx.tipo, descripcion: ctx.descripcion, anchoMaxCm: ctx.anchoMaxCm, altoMaxCm: ctx.altoMaxCm, fondoMaxCm: ctx.fondoMaxCm, medidasOrigen: ctx.medidasOrigen,
-        material: ctx.material, presupuesto: ctx.presupuesto, espacioId: ctx.espacioId, referencias: ctx.referencias,
+        material: ctx.material, presupuesto: ctx.presupuesto, espacioId: ctx.espacioId, referencias: ctx.referencias, ordenar: ctx.ordenar,
       });
       useBorrador.getState().cambiar({ generacionEnCurso: r.id });
       router.push("/nuevo/disenando");

@@ -21,6 +21,8 @@ type Borrador = {
   foto: FotoBorrador | null;
   omitioEspacio: boolean;
   descripcion: string;
+  /** Quitar cajas, ropa y objetos sueltos de la foto antes de poner los muebles. */
+  ordenar: boolean;
   actualizado: string | null;
   generacionEnCurso: number | null;
   cambiar: (p: Partial<Omit<Borrador, "cambiar" | "reiniciar" | "elegirEspacio" | "tieneDatos">>) => void;
@@ -34,6 +36,7 @@ const vacio = {
   foto: null,
   omitioEspacio: false,
   descripcion: "",
+  ordenar: false,
   actualizado: null,
   generacionEnCurso: null,
 };

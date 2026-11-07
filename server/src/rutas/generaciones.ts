@@ -15,6 +15,7 @@ export const generaciones = Router();
 
 type FilaGeneracion = {
   id: number; estado: string; etapa: string; imagenes_listas: number; error: string | null; recomendacion: string | null;
+  foto_ordenada_url: string | null;
   contexto: string; creado: string; terminado: string | null;
 };
 
@@ -28,6 +29,7 @@ function vista(g: FilaGeneracion, trm: Trm | null) {
     imagenesListas: g.imagenes_listas,
     error: g.error,
     recomendacion: g.estado === "listo" ? g.recomendacion : null,
+    fotoOrdenadaUrl: g.foto_ordenada_url,
     contexto,
     creado: iso(g.creado),
     terminado: g.terminado,
@@ -84,6 +86,7 @@ generaciones.post("/generaciones", (req, res) => {
     fotoUrl: esp?.foto_url ?? null, analisis: esp?.analisis ? JSON.parse(esp.analisis) : null,
     referencias,
     ubicable: !!esp?.foto_url,
+    ordenar: b.ordenar === true && !!esp?.foto_url,
   };
 
   const genId = transaccion(() => {
