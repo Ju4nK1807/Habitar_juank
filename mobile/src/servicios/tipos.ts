@@ -1,4 +1,4 @@
-// Formas de la API de Habita (ver CLAUDE.md). Si cambia el backend, se cambia aquí.
+// Formas de la API de Habita. Si cambia el backend, se cambia aquí.
 
 export type Ajuste = "cabe" | "ajustado" | "no_cabe" | "sin_medidas";
 /** "persona" = medidas con metro; "ia" = estimadas por la IA a partir de la foto. */

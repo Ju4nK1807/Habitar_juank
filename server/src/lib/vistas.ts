@@ -1,4 +1,4 @@
-// Convierte filas de la base en la forma pública de la API (ver CLAUDE.md).
+// Convierte filas de la base en la forma pública de la API.
 import { material, presupuesto } from "../catalogos.ts";
 import { calcularAjuste } from "./ajuste.ts";
 import { precioConUsd, type Trm } from "./trm.ts";
